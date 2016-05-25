@@ -1,0 +1,39 @@
+Listen to the following messages:
+=================================
+
+* ItemCreated
+* SearchImpressions
+* VipImpressions
+* Bids, Buys, AddedToMemoryList, AddedToCart
+
+Redis data structure:
+
+TTL: For how long should we keep data?
+
+(item-statistics:total:12341234): Hash
+    Created: DateTime  (stringified),
+    SearchImpressions: int,
+    VipImpressions: int,
+    Bids: int,
+    Buys: int,
+    AddedToMemoryList: int,
+    AddedToCart: int,
+    Ended: DateTime (stringified)
+
+(item-statistics:Date:12341234): Hash
+    Created: DateTime  (stringified),
+    SearchImpressions: int,
+    VipImpressions: int,
+    Bids: int,
+    Buys: int,
+    AddedToMemoryList: int,
+    AddedToCart: int,
+    Ended: DateTime (stringified)
+    
+(item-bidders:12341234): Set of MemberIds
+
+(item-unique-visitors:12341234): Set of TrackingId
+
+Top 10 searches generating vip views.
+Top 10 searches generating ML adds.
+Top 10 searches generating Bids.

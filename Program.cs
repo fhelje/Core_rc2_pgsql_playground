@@ -1,9 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Npgsql;
+using System;
 using Dapper;
 using System.Diagnostics;
 using System.Linq;
+using StackExchange.Redis;
+using Tradera.Statistics;
 
 namespace ConsoleApplication
 {
@@ -16,23 +18,103 @@ namespace ConsoleApplication
         public DateTime Created { get; set; }
         public string Status { get; set; }
     }
+    
     public class Program
     {
         private const string cs = "Host=localhost;Username=fhe2;Password=four5SIX;Database=frank";
+        private const string redisCs = "127.0.0.1:6379";
         private static Random random = new Random();
-
+        private static ConnectionMultiplexer redis;
+        private static ItemStatistics itemStats;
         public static void Main(string[] args)
         {
+            redis = ConnectionMultiplexer.Connect(redisCs);
+            itemStats = new ItemStatistics(redis);
+            var quit = false;
+            while (!quit)
+            {
+                Console.WriteLine("Use redis (R) or postgressql (P) and (c) to quit!");
+                var dbType = Console.ReadKey();
+                if (dbType.KeyChar == 'R')
+                {
+                    RunRedisSample();
+                }
+                else if (dbType.KeyChar == 'P')
+                {
+                    RunPostgresSql();
+                } if (dbType.KeyChar == 'c')
+                {
+                    quit = true;
+                }
+            }
+            redis.Dispose();
+        }
+
+        private static void RunRedisSample()
+        {
+                Console.WriteLine($"Conncting to Redis instans: {redisCs}");
+                try
+                {
+                    var itemId = random.Next(0,1000000);
+                    var db = redis.GetDatabase();
+
+                    db.HashSet("item:" + itemId, "created", DateTime.Now.ToString());
+
+                    var sw = new Stopwatch();
+                    sw.Start();
+                    
+                    for (int i = 0; i < 2000; i++)
+                    {
+                        var ids = Enumerable.Range(0, 50).Select(x=> random.Next(0,1000000));
+                        
+                        itemStats.IncreaseSearchImpressions(ids);
+                    }
+                    sw.Stop();
+                    var rpms = 100000/((decimal)sw.Elapsed.TotalMilliseconds);
+                    System.Console.WriteLine($"Req/ms: {Math.Round(rpms,1)}");
+                    sw.Reset();
+                    // sw.Start();
+                    // for (int i = 0; i < 750; i++)
+                    // {
+                    //     var user = random.Next(0,5000);
+                    //     db.SetAdd("item:vip_users:" + itemId, user);
+                      
+                    // }
+                    // sw.Stop();
+                    // rpms = 750/((decimal)sw.Elapsed.TotalMilliseconds);
+                    // System.Console.WriteLine($"Set add, Req/ms: {Math.Round(rpms,1)}");
+
+                    // var dataTask = db.HashGetAllAsync("item:" + itemId);
+                    // var unique_usersTask = db.SetLengthAsync("item:vip_users:" + itemId);
+                    // var data = db.Wait(dataTask);
+                    // var unique_users = db.Wait(unique_usersTask);
+                    
+                    // Console.WriteLine($"Unique vip views: {unique_users}");
+                    // foreach (var item in data)
+                    // {
+                    //     System.Console.WriteLine($"{item.Name}: {item.Value}");
+                    // }
+                    
+                }
+                catch (System.Exception ex)
+                {
+                    Console.WriteLine(ex.Message);                    
+                }
+        }
+
+        private static void RunPostgresSql()
+        {
             IEnumerable<User> users = null;
-            var quit = false;            
+            var quit = false;
             using (var conn = new NpgsqlConnection(cs))
             {
-                Console.WriteLine($"Conncting to {cs}");
+                Console.WriteLine($"Conncting to Postgres instans: {cs}");
 
                 conn.Open();
 
-                while(!quit) {
-                    Console.WriteLine("q for query, I for inserts, U random new status for all users");
+                while (!quit)
+                {
+                    Console.WriteLine(Environment.NewLine + "q for query, I for inserts, U random new status for all users");
                     var command = Console.ReadKey();
                     quit = ExecuteCommand(users, conn, command);
                 }
@@ -132,5 +214,12 @@ namespace ConsoleApplication
                     VALUES (@email, @first, @last);",new { email = $"email{c}@test.com", first=$"first {c}", last = $"last {c}" });
             }
         }
+        
+        private static void TimedAction(Action action){
+            var sw = new Stopwatch();
+            sw.Start();
+            action();
+            sw.Stop();            
+        }    
     }
 }

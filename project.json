@@ -9,7 +9,8 @@
       "version": "1.0.0-rc2-3002702"
     },
     "Npgsql": "3.1.1",
-    "Dapper": "1.50.0-rc2"
+    "Dapper": "1.50.0-rc2",
+    "StackExchange.Redis": "1.1.604-alpha"
   },
   "frameworks": {
     "netcoreapp1.0": {
