@@ -94,6 +94,7 @@ namespace Tradera.Statistics
             var db = _multiplexer.GetDatabase();
             action(db);
         }
+        
         private void ExecuteHashIncrement(int itemId, RedisValue hashKey, long value = 1)
         {
             var db = _multiplexer.GetDatabase();
