@@ -25,11 +25,11 @@ namespace ConsoleApplication
         private const string redisCs = "127.0.0.1:6379";
         private static Random random = new Random();
         private static ConnectionMultiplexer redis;
-        private static ItemStatistics itemStats;
+        private static ItemStatisticsDatalayer itemStats;
         public static void Main(string[] args)
         {
             redis = ConnectionMultiplexer.Connect(redisCs);
-            itemStats = new ItemStatistics(redis);
+            itemStats = new ItemStatisticsDatalayer(redis);
             var quit = false;
             while (!quit)
             {
